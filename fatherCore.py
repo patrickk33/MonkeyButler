@@ -20,27 +20,28 @@ spriteScaling = .45
 
 #Math calculations for MB's speech sine wave
 
-#Variables for Monkey Butler's weather detection system
-api_key = "c5bbe0c6b2d7ab5f9ae92a9441d47253"
-base_url = "http://api.openweathermap.org/data/2.5/weather?"
-city_name = "Chadds Ford"
-complete_url = base_url + "appid=" + api_key + "&q=" + city_name
-response = requests.get(complete_url)
-x = response.json()
+#Updates the weather
+def update_weather():
+    # Variables for Monkey Butler's weather detection system
+    api_key = "c5bbe0c6b2d7ab5f9ae92a9441d47253"
+    base_url = "http://api.openweathermap.org/data/2.5/weather?"
+    city_name = "Chadds Ford"
+    complete_url = base_url + "appid=" + api_key + "&q=" + city_name
+    response = requests.get(complete_url)
+    x = response.json()
 
+    if x["cod"] != "404":
+        y = x["main"]
+        current_temp = y["temp"]
+        current_pres = y["pressure"]
+        current_hum = y["humidity"]
+        z = x["weather"]
+        weather_description = z[0]["description"]
+    else:
+        print("I cannot find that city.")
 
-if x["cod"] != "404":
-    y=x["main"]
-    current_temp = y["temp"]
-    current_pres = y["pressure"]
-    current_hum = y["humidity"]
-    z=x["weather"] 
-    weather_description = z[0]["description"]
-else:
-    print("I cannot find that city.")
-
-tempF = str(round(current_temp * 9/5-459.67))
-tempStr = str(tempF)
+    tempF = str(round(current_temp * 9/5-459.67))
+    return tempF
 
 #GUI Text color
 guiColorCore = arcade.color.GREEN
@@ -49,9 +50,10 @@ guiColorMC = arcade.color.GREEN
 guiColorSB = arcade.color.GRAY
 guiColorLights = arcade.color.GRAY
 
+
 class MyGame(arcade.Window):
     def __init__(self, width, height, title):
-        super().__init__(width, height, title, fullscreen= False)
+        super().__init__(width, height, title, fullscreen=False)
 
         self.player_list = None
 
@@ -60,6 +62,8 @@ class MyGame(arcade.Window):
         #self.alex_sound = arcade.load_sound("voice/alex.mp3")
         self.I_Monkey_sound = arcade.load_sound("voice/I_Monkey.mp3")
 
+        self.num_updates = 0
+        self.text_string = ""
 
     def setup(self):
 
@@ -105,8 +109,7 @@ class MyGame(arcade.Window):
         self.T_sprite.center_y = centerY-190
         self.T_list.append(self.T_sprite)
 
-
-    def on_draw(self): #
+    def on_draw(self):
         #Initiates render and draws background
         arcade.start_render()
         arcade.set_background_color(arcade.color.BLACK)
@@ -141,7 +144,11 @@ class MyGame(arcade.Window):
         self.T_list.draw()
 
         #Weather Variables
-        arcade.draw_text(tempF + " Fahrenheit", 100, centerY-210, arcade.color.GREEN, 28)
+        if self.num_updates <= 0:
+            self.text_string = update_weather() + " Fahrenheit"
+            self.num_updates = 5400
+
+        arcade.draw_text(self.text_string, 100, centerY - 210, arcade.color.GREEN, 28)
 
         #Gets the time in standard format
         localTime = time.strftime("%H:%M")
@@ -152,15 +159,17 @@ class MyGame(arcade.Window):
         #else:
             #print("not Time!")
 
-    def on_mouse_press(self, x, y, button, modifers):
+        self.num_updates -= 1
+
+    def on_mouse_press(self, x, y, button, modifiers):
         if button == arcade.MOUSE_BUTTON_LEFT:
             arcade.play_sound(self.I_Monkey_sound)
+
 
 def main():
     window = MyGame(1900, 1060, "Monkey Butler Python-Integrated Graphical User Module Interface.py")
     window.setup()
     arcade.run()
 
-    
 
 main()
